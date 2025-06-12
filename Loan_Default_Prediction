@@ -1,0 +1,47 @@
+import pandas as pd
+import numpy as np
+import joblib
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+
+df = pd.read_csv("loan_default.csv")
+
+print("Data loaded successfully.")
+print("🔹 Columns:", df.columns.tolist())
+print("🔹 First 5 rows:\n", df.head())
+print("🔹 Missing values:\n", df.isnull().sum())
+
+df = df.dropna()
+
+label_encoders = {}
+for column in df.select_dtypes(include=['object']).columns:
+    le = LabelEncoder()
+    df[column] = le.fit_transform(df[column])
+    label_encoders[column] = le
+
+target_column = 'Default'
+
+X = df.drop([target_column, 'LoanID'], axis=1)  # Dropping LoanID as it's an identifier
+y = df[target_column]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+model = LogisticRegression()
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_test)
+
+print("Model Evaluation")
+print("Accuracy:", accuracy_score(y_test, y_pred))
+print("Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+print("Classification Report:\n", classification_report(y_test, y_pred))
+
+joblib.dump(model, "model.pkl")
+print("Model saved as model.pkl")
